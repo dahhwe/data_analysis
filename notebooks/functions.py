@@ -1,7 +1,9 @@
 """Основные функции для построения графиков"""
+from typing import List, Any
+
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
+from scipy.stats import sigmaclip
 
 
 def draw_charts(dataframe: pd.DataFrame, column: str, var: str, fig_size=(15, 5)) -> None:
@@ -28,7 +30,7 @@ def draw_charts(dataframe: pd.DataFrame, column: str, var: str, fig_size=(15, 5)
     plt.show()
 
 
-def draw_histogram(dataframe: pd.DataFrame, column: str, number: int):
+def draw_histogram(dataframe: pd.DataFrame, column: str, number: int) -> None:
     """
     Построение гистограммы, оценки плотности распределения и диаграммы
     "ящик с усами".
@@ -53,3 +55,18 @@ def draw_histogram(dataframe: pd.DataFrame, column: str, number: int):
     dataframe[column].plot.kde(ax=axs[2], bw_method=0.1)
 
     plt.show()
+
+
+def remove_outliers(dataframe: pd.DataFrame, column: str) -> pd.DataFrame:
+    _, low, upp = sigmaclip(dataframe[column], 3, 3)
+    dropped_values = dataframe[column][(dataframe[column] < low) | (dataframe[column] > upp)]
+    dataframe = dataframe.drop(dropped_values.index)
+    return dataframe
+
+
+def quartile_method(dataframe: pd.DataFrame, column: str) -> list[float | Any]:
+    q25, q75 = dataframe[column].quantile([0.25, 0.75])
+    delta = q75 - q25
+    mild_border = [q25 - 1.5 * delta, q75 + 1.5 * delta]  # Незначительный разброс
+    extreme_border = [q25 - 3 * delta, q75 + 3 * delta]  # Значительный разброс
+    return mild_border
